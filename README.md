@@ -1,63 +1,75 @@
 # Meesho Reseller Growth & Alert Intelligence Pipeline
 
-## 1. Project Overview
+An end-to-end data and agentic analytics pipeline that converts reseller order data into **validated business metrics, MoM growth alerts, reliable stakeholder narratives, and human-approved notification drafts**.
 
-This project implements a reliable data pipeline for monitoring monthly
-category revenue performance for Meesho resellers.
+The system is designed around a simple principle:
 
-The pipeline follows:
-
-SQL Business Analysis
-        ↓
-Python Validation & Growth Engine
-        ↓
-Reliable AI Narrative
-        ↓
-Agentic Workflow
-        ↓
-Human Approval
-
-The system identifies significant month-over-month revenue movements,
-creates stakeholder-ready narrative drafts, and holds those drafts for
-human approval.
-
-The system does not automatically send emails or messages.
+> **Bad data should not produce business decisions.**
 
 ---
 
-## 2. Objective
+## 1. Problem Statement
 
-The pipeline is designed to:
+Reseller performance data is generated continuously, but identifying meaningful category-level changes requires multiple steps:
 
-- Analyze reseller order data using SQL.
-- Calculate category-level monthly revenue.
-- Identify month-over-month revenue changes.
-- Validate incoming revenue feeds before calculations.
-- Flag categories whose absolute MoM movement exceeds 8%.
-- Handle the exact 8% boundary separately.
-- Generate reliable stakeholder narratives.
-- Limit automated drafting to the top 3 flagged categories.
-- Suppress additional flagged categories for manual review.
-- Stop immediately when input data fails validation.
-- Keep all drafted messages for human approval.
+- Aggregate raw orders into business metrics
+- Validate incoming data
+- Calculate month-over-month (MoM) growth
+- Identify significant movements
+- Prioritize the most important alerts
+- Generate a concise business explanation
+- Prevent unsupported claims
+- Keep sensitive reseller information masked
+- Require human approval before communication
+
+This project implements that workflow as a modular pipeline.
 
 ---
 
-## 3. Dataset
-
-The dataset contains:
-
-- 24 resellers.
-- 900 orders.
-- April, May, and June 2026 data.
-- 4 regions.
-- 5 product categories.
-
-### Input files
+## 2. Solution
 
 ```text
-data/
-├── generate_dataset.py
-├── resellers.csv
-├── orders.csv
-└── meesho_reseller.db
+                    RAW DATA
+                       │
+                       ▼
+              ┌─────────────────┐
+              │   SQL Engine    │
+              │ Revenue / AOV   │
+              │ Region / Orders │
+              └────────┬────────┘
+                       │
+                       ▼
+              ┌─────────────────┐
+              │ Python Guardrail│
+              │   Validation    │
+              └────────┬────────┘
+                       │
+                ┌──────┴──────┐
+                │             │
+             INVALID         VALID
+                │             │
+                ▼             ▼
+           HARD STOP      MoM Growth
+                              │
+                              ▼
+                       8% Business Rule
+                              │
+                 ┌────────────┼────────────┐
+                 │            │            │
+               Flagged     Not Flagged   Exact 8%
+                 │                         │
+                 ▼                         ▼
+             Rank by                   Escalation
+             |MoM %|                   (No Draft)
+                 │
+                 ▼
+             Top 3 Alerts
+                 │
+                 ▼
+        Narrative Generation
+                 │
+                 ▼
+         Human Approval Gate
+                 │
+                 ▼
+          Structured JSON
